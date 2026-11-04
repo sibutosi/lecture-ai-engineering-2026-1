@@ -77,3 +77,33 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+
+import json
+import random
+
+def make_quiz(lecture: int) -> str:
+    """指定された講義回の用語集から確認問題を1問作成して返します。
+    確認問題を出題するように求められた場合に使います。
+
+    Args:
+        lecture: 講義の回数（例: 2）
+    """
+    glossary = load_glossary()
+    # 指定された lecture の用語を抽出
+    terms = [item for item in glossary if item.get("lecture") == lecture]
+
+    # 用語が見つからない場合（pytestの lecture=0 対策）
+    if not terms:
+        return json.dumps({
+            "error": f"第{lecture}回の用語が見つかりませんでした。"
+        }, ensure_ascii=False)
+
+    # 1つ選んで問題と解答を作成
+    chosen = random.choice(terms)
+    term_name = chosen.get("term", "")
+    definition = chosen.get("definition", "")
+
+    return json.dumps({
+        "question": f"「{term_name}」の意味は何ですか？",
+        "answer": definition
+    }, ensure_ascii=False)
